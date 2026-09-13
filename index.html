@@ -267,6 +267,25 @@
       top: 16px;
       right: 16px;
     }
+    .itunes-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  font-size: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-decoration: none;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.itunes-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
   </style>
 </head>
 <body>
@@ -292,12 +311,17 @@
     </div>
 
     <!-- Play / Pause Controls -->
-    <div class="controls">
-      <button class="play-btn" id="playBtn">
-        <i class="ph ph-play" id="playIcon"></i>
-      </button>
-    </div>
+<!-- Controls -->
+<div class="controls">
+  <button class="play-btn" id="playBtn">
+    <i class="ph ph-play" id="playIcon"></i>
+  </button>
 
+  <!-- New iTunes / Apple Music Link Button -->
+  <a id="itunesBtn" href="#" target="_blank" rel="noopener noreferrer" class="itunes-btn" title="Open in Apple Music" style="display: none;">
+    <i class="ph ph-apple-logo"></i>
+  </a>
+</div>
     <!-- Inline 5-Song History (Toggled via Menu Option) -->
     <div class="inline-recent" id="inlineRecentContainer">
       <h3>Recently Played</h3>
@@ -519,21 +543,38 @@ function updateNowPlaying(fullTitle) {
     fetchArtwork(`${artist} ${song}`);
   }
 }
-    // Fetch Artwork using iTunes Search API
-    async function fetchArtwork(query) {
-      try {
-        const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=1`);
-        const data = await res.json();
-        if (data.results && data.results.length > 0) {
-          // Get high-res artwork
-          const highResArt = data.results[0].artworkUrl100.replace("100x100bb", "600x600bb");
-          document.getElementById("albumArt").src = highResArt;
-        }
-      } catch (e) {
-        // Fallback default image on failure
-      }
-    }
+// Fetch Artwork & Apple Music Link using iTunes API
+async function fetchArtwork(query) {
+  const itunesBtn = document.getElementById("itunesBtn");
 
+  try {
+    const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=1`);
+    const data = await res.json();
+    
+    if (data.results && data.results.length > 0) {
+      const track = data.results[0];
+
+      // Update High-Res Artwork
+      const highResArt = track.artworkUrl100.replace("100x100bb", "600x600bb");
+      document.getElementById("albumArt").src = highResArt;
+
+      // Update iTunes / Apple Music Link
+      const trackUrl = track.trackViewUrl || track.collectionViewUrl;
+      if (trackUrl) {
+        itunesBtn.href = trackUrl;
+        itunesBtn.style.display = "flex";
+      } else {
+        itunesBtn.style.display = "none";
+      }
+    } else {
+      // Hide button if no match found on iTunes
+      itunesBtn.style.display = "none";
+    }
+  } catch (e) {
+    console.warn("Could not fetch artwork/link from iTunes API:", e);
+    itunesBtn.style.display = "none";
+  }
+}
     // Render Recent Songs list (Both for modal and inline view)
     function renderRecentTracks() {
       const inlineList = document.getElementById("inlineRecentList");
