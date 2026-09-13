@@ -446,54 +446,57 @@ async function fetchMetadata() {
     }
 
     const data = await response.json();
-    console.log("Raw Icecast JSON Data:", data); // Check F12 Console to see what your server returns!
+    console.log("Raw Icecast JSON Data:", data);
 
     let fullTitle = "";
-    let artistName = "";
-    let songTitle = "";
 
     if (data && data.icestats && data.icestats.source) {
       let source = data.icestats.source;
       
       // Handle array of sources/mountpoints
       if (Array.isArray(source)) {
-        // Option: target specific mountpoint or take the first active one
-        source = source.find(s => s.title || s.yp_currently_playing || s.song) || source[0];
+        source = source[0];
       }
 
-      // 1. Separate artist & title fields (common in Icecast-KH)
-      if (source.artist && source.title) {
-        artistName = source.artist;
-        songTitle = source.title;
-        fullTitle = `${artistName} - ${songTitle}`;
+      // Check inside source.metadata.x_icy_title first
+      if (source.metadata && source.metadata.x_icy_title) {
+        fullTitle = source.metadata.x_icy_title;
       } 
-      // 2. Combined string (standard Icecast)
-      else {
-        fullTitle = source.title || source.yp_currently_playing || source.song || source.server_name || "";
+      // Fallback checks for standard Icecast properties
+      else if (source.title) {
+        fullTitle = source.title;
+      } else if (source.yp_currently_playing) {
+        fullTitle = source.yp_currently_playing;
+      } else if (source.song) {
+        fullTitle = source.song;
       }
     }
 
     console.log("Extracted Title:", fullTitle);
 
     if (fullTitle.trim() !== "") {
-      updateNowPlaying(fullTitle, artistName, songTitle);
+      updateNowPlaying(fullTitle);
     } else {
-      console.warn("Could not find a valid title property in icestats.source");
+      console.warn("Could not find x_icy_title or title property in icestats.source");
     }
   } catch (err) {
     console.error("Error fetching or parsing metadata:", err);
   }
 }
 
-function updateNowPlaying(fullTitle, explicitArtist = "", explicitSong = "") {
-  let artist = explicitArtist || "Unknown Artist";
-  let song = explicitSong || fullTitle;
+function updateNowPlaying(fullTitle) {
+  let artist = "Unknown Artist";
+  let song = fullTitle;
 
-  // Split "Artist - Song" if provided as a single combined string
-  if (!explicitArtist && fullTitle.includes(" - ")) {
+  // Split "Artist - Song Title" if it contains a hyphen
+  if (fullTitle.includes(" - ")) {
     const parts = fullTitle.split(" - ");
     artist = parts[0].trim();
     song = parts.slice(1).join(" - ").trim();
+  } else if (fullTitle.includes("-")) {
+    const parts = fullTitle.split("-");
+    artist = parts[0].trim();
+    song = parts.slice(1).join("-").trim();
   }
 
   const currentSongElement = document.getElementById("songTitle");
@@ -512,11 +515,10 @@ function updateNowPlaying(fullTitle, explicitArtist = "", explicitSong = "") {
     document.getElementById("songTitle").innerText = song;
     document.getElementById("artistName").innerText = artist;
 
-    // Fetch Artwork from iTunes
+    // Fetch Artwork from iTunes API
     fetchArtwork(`${artist} ${song}`);
   }
 }
-
     // Fetch Artwork using iTunes Search API
     async function fetchArtwork(query) {
       try {
