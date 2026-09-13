@@ -342,10 +342,10 @@
   <div class="modal" id="infoModal">
     <div class="modal-content">
       <button class="icon-btn modal-close" id="closeInfoModal"><i class="ph ph-x"></i></button>
-      <h2 style="margin-bottom: 12px;" id="infoStationName">Station Name</h2>
+      <h2 style="margin-bottom: 12px;" id="infoStationName">99.9 FM WJVL</h2>
       <p style="color: var(--accent-color); font-weight: 600; margin-bottom: 8px;" id="infoFormat">Format: Hits</p>
       <p style="color: var(--text-sub); font-size: 0.95rem; line-height: 1.4;" id="infoDesc">
-        Welcome to our station! Streaming the best tracks 24/7 with crystal clear audio.
+        All The Best Country 99.9 WJVL
       </p>
     </div>
   </div>
@@ -367,16 +367,16 @@
   <script>
     // --- CONFIGURATION ---
     // Replace with your actual Icecast Direct Stream URL:
-    const STREAM_URL = "https://your-icecast-server.com/stream"; 
+    const STREAM_URL = "http://192.168.1.128:8000/stream"; 
     
     // Replace with your Icecast JSON metadata stats endpoint URL (or custom API):
     // Standard Icecast stats URL: "https://your-icecast-server.com/status-json.xsl"
-    const METADATA_URL = "https://your-icecast-server.com/status-json.xsl";
+    const METADATA_URL = "http://192.168.1.128:8000/status-json.xsl";
 
     const STATION_DETAILS = {
-      name: "Country Hits Radio",
-      format: "Country / Americana",
-      description: "Playing the greatest country hits round-the-clock live from our studio to your device."
+      name: "99.9 WJVL",
+      format: "Hits",
+      description: "All The Best Country 99.9 WJVL"
     };
 
     // --- PLAYER STATE ---
