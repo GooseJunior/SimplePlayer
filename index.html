@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Live Radio Stream</title>
+  <!-- Phosphor Icons for modern icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    :root {
+      --bg-color: #0f1015;
+      --card-bg: #1b1c24;
+      --accent-color: #fa2d48; /* Apple Music style red */
+      --text-main: #ffffff;
+      --text-sub: #a0a0ab;
+      --border-color: #2a2b36;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    /* Main Container */
+    .player-card {
+      background-color: var(--card-bg);
+      width: 100%;
+      max-width: 420px;
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Top Bar */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .live-badge {
+      background-color: var(--accent-color);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: bold;
+      padding: 4px 10px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      color: var(--text-main);
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .icon-btn:hover {
+      opacity: 0.7;
+    }
+
+    /* Artwork & Main Display */
+    .artwork-container {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      background-color: #222;
+    }
+
+    .artwork-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .track-info {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .track-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .track-artist {
+      font-size: 1rem;
+      color: var(--text-sub);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 10px;
+    }
+
+    .play-btn {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background-color: var(--accent-color);
+      border: none;
+      color: white;
+      font-size: 2rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: transform 0.2s, background-color 0.2s;
+    }
+
+    .play-btn:hover {
+      transform: scale(1.05);
+    }
+
+    /* Embedded Recently Played Section */
+    .inline-recent {
+      margin-top: 24px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 16px;
+      display: none; /* Hidden by default until toggled */
+    }
+
+    .inline-recent h3 {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      color: var(--text-sub);
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    .recent-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+      font-size: 0.85rem;
+    }
+
+    .recent-item img {
+      width: 40px;
+      height: 40px;
+      border-radius: 6px;
+    }
+
+    .recent-details {
+      overflow: hidden;
+    }
+
+    .recent-song {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .recent-artist {
+      color: var(--text-sub);
+      font-size: 0.8rem;
+    }
+
+    /* Slide-out Overlay Menu */
+    .menu-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: var(--card-bg);
+      z-index: 10;
+      transform: translateX(100%);
+      transition: transform 0.3s ease-in-out;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .menu-overlay.active {
+      transform: translateX(0);
+    }
+
+    .menu-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .menu-options {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .menu-options button, .menu-options label {
+      width: 100%;
+      padding: 14px 16px;
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      color: var(--text-main);
+      text-align: left;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Modal Popups (For Station Info & Full History) */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 20;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .modal-content {
+      background-color: var(--card-bg);
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 400px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="player-card">
+    <!-- Header Bar -->
+    <div class="header">
+      <span class="live-badge">Live</span>
+      <button class="icon-btn" id="menuToggleBtn">
+        <i class="ph ph-list"></i>
+      </button>
+    </div>
+
+    <!-- Artwork -->
+    <div class="artwork-container">
+      <img id="albumArt" src="https://via.placeholder.com/400x400/222222/ffffff?text=Radio+Live" alt="Album Cover">
+    </div>
+
+    <!-- Live Metadata -->
+    <div class="track-info">
+      <div class="track-title" id="songTitle">Loading Station...</div>
+      <div class="track-artist" id="artistName">Please wait</div>
+    </div>
+
+    <!-- Play / Pause Controls -->
+    <div class="controls">
+      <button class="play-btn" id="playBtn">
+        <i class="ph ph-play" id="playIcon"></i>
+      </button>
+    </div>
+
+    <!-- Inline 5-Song History (Toggled via Menu Option) -->
+    <div class="inline-recent" id="inlineRecentContainer">
+      <h3>Recently Played</h3>
+      <div id="inlineRecentList">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- Slide-Out Settings Menu -->
+    <div class="menu-overlay" id="menuOverlay">
+      <div class="menu-header">
+        <h2>Menu</h2>
+        <button class="icon-btn" id="menuCloseBtn">
+          <i class="ph ph-x"></i>
+        </button>
+      </div>
+
+      <ul class="menu-options">
+        <li>
+          <button id="btnStationInfo">
+            <span>Station Info</span>
+            <i class="ph ph-info"></i>
+          </button>
+        </li>
+        <li>
+          <button id="btnRecentlyPlayed">
+            <span>Recently Played</span>
+            <i class="ph ph-clock-counter-clockwise"></i>
+          </button>
+        </li>
+        <li>
+          <label for="toggleInlineRecent" style="cursor: pointer;">
+            <span>Show Recent Songs in Player</span>
+            <input type="checkbox" id="toggleInlineRecent" style="accent-color: var(--accent-color);">
+          </label>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Modal: Station Info -->
+  <div class="modal" id="infoModal">
+    <div class="modal-content">
+      <button class="icon-btn modal-close" id="closeInfoModal"><i class="ph ph-x"></i></button>
+      <h2 style="margin-bottom: 12px;" id="infoStationName">Station Name</h2>
+      <p style="color: var(--accent-color); font-weight: 600; margin-bottom: 8px;" id="infoFormat">Format: Hits</p>
+      <p style="color: var(--text-sub); font-size: 0.95rem; line-height: 1.4;" id="infoDesc">
+        Welcome to our station! Streaming the best tracks 24/7 with crystal clear audio.
+      </p>
+    </div>
+  </div>
+
+  <!-- Modal: Full Recently Played -->
+  <div class="modal" id="historyModal">
+    <div class="modal-content">
+      <button class="icon-btn modal-close" id="closeHistoryModal"><i class="ph ph-x"></i></button>
+      <h2 style="margin-bottom: 16px;">Recently Played</h2>
+      <div id="fullHistoryList">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio Element -->
+  <audio id="audioStream" preload="none"></audio>
+
+  <script>
+    // --- CONFIGURATION ---
+    // Replace with your actual Icecast Direct Stream URL:
+    const STREAM_URL = "https://your-icecast-server.com/stream"; 
+    
+    // Replace with your Icecast JSON metadata stats endpoint URL (or custom API):
+    // Standard Icecast stats URL: "https://your-icecast-server.com/status-json.xsl"
+    const METADATA_URL = "https://your-icecast-server.com/status-json.xsl";
+
+    const STATION_DETAILS = {
+      name: "Country Hits Radio",
+      format: "Country / Americana",
+      description: "Playing the greatest country hits round-the-clock live from our studio to your device."
+    };
+
+    // --- PLAYER STATE ---
+    const audio = document.getElementById("audioStream");
+    const playBtn = document.getElementById("playBtn");
+    const playIcon = document.getElementById("playIcon");
+    let isPlaying = false;
+    let recentTracks = [];
+
+    audio.src = STREAM_URL;
+
+    // Play/Pause Logic
+    playBtn.addEventListener("click", () => {
+      if (isPlaying) {
+        audio.pause();
+        playIcon.className = "ph ph-play";
+      } else {
+        audio.play();
+        playIcon.className = "ph ph-pause";
+      }
+      isPlaying = !isPlaying;
+    });
+
+    // --- MENU OVERLAY CONTROLS ---
+    const menuOverlay = document.getElementById("menuOverlay");
+    document.getElementById("menuToggleBtn").addEventListener("click", () => menuOverlay.classList.add("active"));
+    document.getElementById("menuCloseBtn").addEventListener("click", () => menuOverlay.classList.remove("active"));
+
+    // --- INLINE RECENT TOGGLE ---
+    const toggleInlineRecent = document.getElementById("toggleInlineRecent");
+    const inlineRecentContainer = document.getElementById("inlineRecentContainer");
+
+    toggleInlineRecent.addEventListener("change", (e) => {
+      inlineRecentContainer.style.display = e.target.checked ? "block" : "none";
+    });
+
+    // --- MODAL CONTROLS ---
+    const infoModal = document.getElementById("infoModal");
+    const historyModal = document.getElementById("historyModal");
+
+    document.getElementById("btnStationInfo").addEventListener("click", () => {
+      document.getElementById("infoStationName").innerText = STATION_DETAILS.name;
+      document.getElementById("infoFormat").innerText = "Format: " + STATION_DETAILS.format;
+      document.getElementById("infoDesc").innerText = STATION_DETAILS.description;
+      menuOverlay.classList.remove("active");
+      infoModal.style.display = "flex";
+    });
+
+    document.getElementById("btnRecentlyPlayed").addEventListener("click", () => {
+      menuOverlay.classList.remove("active");
+      historyModal.style.display = "flex";
+    });
+
+    document.getElementById("closeInfoModal").addEventListener("click", () => infoModal.style.display = "none");
+    document.getElementById("closeHistoryModal").addEventListener("click", () => historyModal.style.display = "none");
+
+    // --- METADATA & RECENT SONGS FETCHING ---
+    // Note: If Icecast CORS is blocked, you may need to fetch metadata via a simple backend proxy or serverless function.
+    async function fetchMetadata() {
+      try {
+        const response = await fetch(METADATA_URL);
+        const data = await response.json();
+        
+        // Typical Icecast status-json structure parser:
+        let source = data.icestats.source;
+        if (Array.isArray(source)) source = source[0]; // grab first stream if multiple
+        
+        const currentTitleString = source.title || source.yp_currently_playing || "Live Broadcast";
+        
+        updateNowPlaying(currentTitleString);
+      } catch (err) {
+        console.warn("Could not fetch stream metadata (Check CORS setup or backend). Using fallback.");
+      }
+    }
+
+    function updateNowPlaying(fullTitle) {
+      // Assuming Icecast sends metadata as "Artist - Song Title"
+      let artist = "Unknown Artist";
+      let song = fullTitle;
+
+      if (fullTitle.includes("-")) {
+        const parts = fullTitle.split("-");
+        artist = parts[0].trim();
+        song = parts.slice(1).join("-").trim();
+      }
+
+      const currentSongElement = document.getElementById("songTitle");
+      
+      // Only push to recent list if the track actually changes
+      if (currentSongElement.innerText !== song && song !== "Loading Station...") {
+        if (currentSongElement.innerText !== "Loading Station...") {
+          recentTracks.unshift({ artist: document.getElementById("artistName").innerText, song: currentSongElement.innerText });
+          if (recentTracks.length > 10) recentTracks.pop(); // Keep last 10
+          renderRecentTracks();
+        }
+
+        document.getElementById("songTitle").innerText = song;
+        document.getElementById("artistName").innerText = artist;
+
+        // Fetch Album Artwork from iTunes Free Search API
+        fetchArtwork(`${artist} ${song}`);
+      }
+    }
+
+    // Fetch Artwork using iTunes Search API
+    async function fetchArtwork(query) {
+      try {
+        const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=1`);
+        const data = await res.json();
+        if (data.results && data.results.length > 0) {
+          // Get high-res artwork
+          const highResArt = data.results[0].artworkUrl100.replace("100x100bb", "600x600bb");
+          document.getElementById("albumArt").src = highResArt;
+        }
+      } catch (e) {
+        // Fallback default image on failure
+      }
+    }
+
+    // Render Recent Songs list (Both for modal and inline view)
+    function renderRecentTracks() {
+      const inlineList = document.getElementById("inlineRecentList");
+      const fullList = document.getElementById("fullHistoryList");
+
+      inlineList.innerHTML = "";
+      fullList.innerHTML = "";
+
+      // Inline list shows 5 tracks maximum
+      const inlineTracks = recentTracks.slice(0, 5);
+      inlineTracks.forEach(track => {
+        inlineList.appendChild(createTrackItemHTML(track));
+      });
+
+      // Full modal list shows all captured history
+      recentTracks.forEach(track => {
+        fullList.appendChild(createTrackItemHTML(track));
+      });
+    }
+
+    function createTrackItemHTML(track) {
+      const div = document.createElement("div");
+      div.className = "recent-item";
+      div.innerHTML = `
+        <i class="ph ph-music-notes" style="font-size: 1.5rem; color: var(--accent-color);"></i>
+        <div class="recent-details">
+          <div class="recent-song">${track.song}</div>
+          <div class="recent-artist">${track.artist}</div>
+        </div>
+      `;
+      return div;
+    }
+
+    // Poll metadata every 10 seconds
+    setInterval(fetchMetadata, 10000);
+    fetchMetadata();
+  </script>
+</body>
+</html>
