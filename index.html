@@ -371,7 +371,7 @@
     
     // Replace with your Icecast JSON metadata stats endpoint URL (or custom API):
     // Standard Icecast stats URL: "https://your-icecast-server.com/status-json.xsl"
-    const METADATA_URL = "http://192.168.1.128:8000/status-json.xsl";
+    const METADATA_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent("http://192.168.1.128:8000/status-json.xsl");
 
     const STATION_DETAILS = {
       name: "99.9 WJVL",
@@ -435,23 +435,34 @@
 
     // --- METADATA & RECENT SONGS FETCHING ---
     // Note: If Icecast CORS is blocked, you may need to fetch metadata via a simple backend proxy or serverless function.
-    async function fetchMetadata() {
-      try {
-        const response = await fetch(METADATA_URL);
-        const data = await response.json();
-        
-        // Typical Icecast status-json structure parser:
-        let source = data.icestats.source;
-        if (Array.isArray(source)) source = source[0]; // grab first stream if multiple
-        
-        const currentTitleString = source.title || source.yp_currently_playing || "Live Broadcast";
-        
-        updateNowPlaying(currentTitleString);
-      } catch (err) {
-        console.warn("Could not fetch stream metadata (Check CORS setup or backend). Using fallback.");
+async function fetchMetadata() {
+  try {
+    // Add a timestamp to bypass browser caching
+    const cacheBuster = `?_=${new Date().getTime()}`;
+    const response = await fetch(METADATA_URL + cacheBuster);
+    const data = await response.json();
+    
+    let fullTitle = "";
+
+    if (data.icestats && data.icestats.source) {
+      let source = data.icestats.source;
+      
+      // If there are multiple streams/mountpoints, grab the first one
+      if (Array.isArray(source)) {
+        source = source[0];
       }
+
+      // Check common Icecast title properties
+      fullTitle = source.title || source.yp_currently_playing || source.song || "";
     }
 
+    if (fullTitle.trim() !== "") {
+      updateNowPlaying(fullTitle);
+    }
+  } catch (err) {
+    console.warn("Could not fetch metadata:", err);
+  }
+}
     function updateNowPlaying(fullTitle) {
       // Assuming Icecast sends metadata as "Artist - Song Title"
       let artist = "Unknown Artist";
