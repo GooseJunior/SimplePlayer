@@ -393,10 +393,10 @@
     // Replace with your actual Icecast Direct Stream URL:
     const STREAM_URL = "http://192.168.1.128:8000/stream"; 
     
-    // Replace with your Icecast JSON metadata stats endpoint URL (or custom API):
-    // Standard Icecast stats URL: "https://your-icecast-server.com/status-json.xsl"
-    const METADATA_URL = "http://192.168.1.128:8000/status-json.xsl";
-
+// Example using a public CORS proxy for mobile compatibility
+const ICECAST_JSON_URL = "http://192.168.1.128:8000/status-json.xsl";
+const METADATA_URL = "https://api.allorigins.win/raw?url=192.168.1.128:8000/status-json.xsl" + encodeURIComponent(ICECAST_JSON_URL);
+    
     const STATION_DETAILS = {
       name: "99.9 WJVL",
       format: "Hits",
@@ -575,23 +575,52 @@ async function fetchArtwork(query) {
     itunesBtn.style.display = "none";
   }
 }
-    // Render Recent Songs list (Both for modal and inline view)
-    function renderRecentTracks() {
-      const inlineList = document.getElementById("inlineRecentList");
-      const fullList = document.getElementById("fullHistoryList");
+    // Load saved history from browser memory on startup, or start empty
+let recentTracks = JSON.parse(localStorage.getItem("radio_recent_tracks")) || [];
 
-      inlineList.innerHTML = "";
-      fullList.innerHTML = "";
+// Call render on initial load so previously saved tracks show up immediately
+document.addEventListener("DOMContentLoaded", () => {
+  renderRecentTracks();
+});
 
-      // Inline list shows 5 tracks maximum
-      const inlineTracks = recentTracks.slice(0, 5);
-      inlineTracks.forEach(track => {
-        inlineList.appendChild(createTrackItemHTML(track));
+function updateNowPlaying(fullTitle) {
+  let artist = "Unknown Artist";
+  let song = fullTitle;
+
+  if (fullTitle.includes(" - ")) {
+    const parts = fullTitle.split(" - ");
+    artist = parts[0].trim();
+    song = parts.slice(1).join(" - ").trim();
+  } else if (fullTitle.includes("-")) {
+    const parts = fullTitle.split("-");
+    artist = parts[0].trim();
+    song = parts.slice(1).join("-").trim();
+  }
+
+  const currentSongElement = document.getElementById("songTitle");
+
+  // Update UI if track has changed
+  if (currentSongElement.innerText !== song) {
+    if (currentSongElement.innerText !== "Loading Station...") {
+      // Add current track to history array
+      recentTracks.unshift({ 
+        artist: document.getElementById("artistName").innerText, 
+        song: currentSongElement.innerText 
       });
+      
+      // Limit history to 10 items
+      if (recentTracks.length > 10) recentTracks.pop();
 
-      // Full modal list shows all captured history
-      recentTracks.forEach(track => {
-        fullList.appendChild(createTrackItemHTML(track));
+      // Save to localStorage so it survives page reloads
+      localStorage.setItem("radio_recent_tracks", JSON.stringify(recentTracks));
+
+      renderRecentTracks();
+    }
+
+    document.getElementById("songTitle").innerText = song;
+    document.getElementById("artistName").innerText = artist;
+
+    fetchArtwork(`\({artist}\){song}`);
       });
     }
 
