@@ -370,7 +370,7 @@
     const ICECAST_JSON_RAW = "http://192.168.1.128:8000/status-json.xsl";
     
     // Uses proxy to avoid mobile & CORS blocks:
-    const METADATA_URL = "http://192.168.1.128:8000/status-json.xsl" + encodeURIComponent(ICECAST_JSON_RAW);
+    const METADATA_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(ICECAST_JSON_RAW);
 
     const STATION_DETAILS = {
       name: "Hits",
