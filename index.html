@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Live Radio Stream</title>
-  <!-- Phosphor Icons for modern icons -->
+  <!-- Phosphor Icons -->
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <style>
     :root {
@@ -33,7 +33,6 @@
       padding: 20px;
     }
 
-    /* Main Container */
     .player-card {
       background-color: var(--card-bg);
       width: 100%;
@@ -45,7 +44,6 @@
       overflow: hidden;
     }
 
-    /* Top Bar */
     .header {
       display: flex;
       justify-content: space-between;
@@ -77,7 +75,6 @@
       opacity: 0.7;
     }
 
-    /* Artwork & Main Display */
     .artwork-container {
       width: 100%;
       aspect-ratio: 1;
@@ -116,12 +113,11 @@
       text-overflow: ellipsis;
     }
 
-    /* Controls */
     .controls {
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 20px;
+      gap: 16px;
       margin-bottom: 10px;
     }
 
@@ -144,12 +140,31 @@
       transform: scale(1.05);
     }
 
-    /* Embedded Recently Played Section */
+    .itunes-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      font-size: 1.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-decoration: none;
+      transition: background-color 0.2s, transform 0.2s;
+    }
+
+    .itunes-btn:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+      transform: scale(1.05);
+    }
+
     .inline-recent {
       margin-top: 24px;
       border-top: 1px solid var(--border-color);
       padding-top: 16px;
-      display: none; /* Hidden by default until toggled */
+      display: none;
     }
 
     .inline-recent h3 {
@@ -168,12 +183,6 @@
       font-size: 0.85rem;
     }
 
-    .recent-item img {
-      width: 40px;
-      height: 40px;
-      border-radius: 6px;
-    }
-
     .recent-details {
       overflow: hidden;
     }
@@ -190,7 +199,6 @@
       font-size: 0.8rem;
     }
 
-    /* Slide-out Overlay Menu */
     .menu-overlay {
       position: absolute;
       top: 0;
@@ -239,7 +247,6 @@
       align-items: center;
     }
 
-    /* Modal Popups (For Station Info & Full History) */
     .modal {
       display: none;
       position: fixed;
@@ -267,31 +274,11 @@
       top: 16px;
       right: 16px;
     }
-    .itunes-btn {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
-  font-size: 1.5rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-decoration: none;
-  transition: background-color 0.2s, transform 0.2s;
-}
-
-.itunes-btn:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-  transform: scale(1.05);
-}
   </style>
 </head>
 <body>
 
   <div class="player-card">
-    <!-- Header Bar -->
     <div class="header">
       <span class="live-badge">Live</span>
       <button class="icon-btn" id="menuToggleBtn">
@@ -299,38 +286,29 @@
       </button>
     </div>
 
-    <!-- Artwork -->
     <div class="artwork-container">
       <img id="albumArt" src="https://via.placeholder.com/400x400/222222/ffffff?text=Radio+Live" alt="Album Cover">
     </div>
 
-    <!-- Live Metadata -->
     <div class="track-info">
       <div class="track-title" id="songTitle">Loading Station...</div>
       <div class="track-artist" id="artistName">Please wait</div>
     </div>
 
-    <!-- Play / Pause Controls -->
-<!-- Controls -->
-<div class="controls">
-  <button class="play-btn" id="playBtn">
-    <i class="ph ph-play" id="playIcon"></i>
-  </button>
-
-  <!-- New iTunes / Apple Music Link Button -->
-  <a id="itunesBtn" href="#" target="_blank" rel="noopener noreferrer" class="itunes-btn" title="Open in Apple Music" style="display: none;">
-    <i class="ph ph-apple-logo"></i>
-  </a>
-</div>
-    <!-- Inline 5-Song History (Toggled via Menu Option) -->
-    <div class="inline-recent" id="inlineRecentContainer">
-      <h3>Recently Played</h3>
-      <div id="inlineRecentList">
-        <!-- Rendered dynamically -->
-      </div>
+    <div class="controls">
+      <button class="play-btn" id="playBtn">
+        <i class="ph ph-play" id="playIcon"></i>
+      </button>
+      <a id="itunesBtn" href="#" target="_blank" rel="noopener noreferrer" class="itunes-btn" title="Open in Apple Music" style="display: none;">
+        <i class="ph ph-apple-logo"></i>
+      </a>
     </div>
 
-    <!-- Slide-Out Settings Menu -->
+    <div class="inline-recent" id="inlineRecentContainer">
+      <h3>Recently Played</h3>
+      <div id="inlineRecentList"></div>
+    </div>
+
     <div class="menu-overlay" id="menuOverlay">
       <div class="menu-header">
         <h2>Menu</h2>
@@ -362,57 +340,63 @@
     </div>
   </div>
 
-  <!-- Modal: Station Info -->
   <div class="modal" id="infoModal">
     <div class="modal-content">
       <button class="icon-btn modal-close" id="closeInfoModal"><i class="ph ph-x"></i></button>
-      <h2 style="margin-bottom: 12px;" id="infoStationName">99.9 FM WJVL</h2>
-      <p style="color: var(--accent-color); font-weight: 600; margin-bottom: 8px;" id="infoFormat">Format: Hits</p>
+      <h2 style="margin-bottom: 12px;" id="infoStationName">Station Name</h2>
+      <p style="color: var(--accent-color); font-weight: 600; margin-bottom: 8px;" id="infoFormat">Format: Country / Hits</p>
       <p style="color: var(--text-sub); font-size: 0.95rem; line-height: 1.4;" id="infoDesc">
-        All The Best Country 99.9 WJVL
+        Welcome to our station! Streaming live audio 24/7.
       </p>
     </div>
   </div>
 
-  <!-- Modal: Full Recently Played -->
   <div class="modal" id="historyModal">
     <div class="modal-content">
       <button class="icon-btn modal-close" id="closeHistoryModal"><i class="ph ph-x"></i></button>
       <h2 style="margin-bottom: 16px;">Recently Played</h2>
-      <div id="fullHistoryList">
-        <!-- Rendered dynamically -->
-      </div>
+      <div id="fullHistoryList"></div>
     </div>
   </div>
 
-  <!-- Audio Element -->
   <audio id="audioStream" preload="none"></audio>
 
   <script>
     // --- CONFIGURATION ---
-    // Replace with your actual Icecast Direct Stream URL:
+    // Replace with your direct stream URL:
     const STREAM_URL = "http://192.168.1.128:8000/stream"; 
     
-// Example using a public CORS proxy for mobile compatibility
-const ICECAST_JSON_URL = "http://192.168.1.128:8000/status-json.xsl";
-const METADATA_URL = "https://api.allorigins.win/raw?url=192.168.1.128:8000/status-json.xsl" + encodeURIComponent(ICECAST_JSON_URL);
+    // Replace with your raw status-json.xsl URL:
+    const ICECAST_JSON_RAW = "http://192.168.1.128:8000/status-json.xsl";
     
+    // Uses proxy to avoid mobile & CORS blocks:
+    const METADATA_URL = "http://192.168.1.128:8000/status-json.xsl" + encodeURIComponent(ICECAST_JSON_RAW);
+
     const STATION_DETAILS = {
-      name: "99.9 WJVL",
-      format: "Hits",
-      description: "All The Best Country 99.9 WJVL"
+      name: "Hits",
+      format: "Top 40",
+      description: "Top 40 Hits"
     };
 
-    // --- PLAYER STATE ---
+    // --- STATE ---
     const audio = document.getElementById("audioStream");
     const playBtn = document.getElementById("playBtn");
     const playIcon = document.getElementById("playIcon");
     let isPlaying = false;
-    let recentTracks = [];
+    
+    // Load track history from browser storage
+    let recentTracks = JSON.parse(localStorage.getItem("radio_recent_tracks")) || [];
 
     audio.src = STREAM_URL;
 
-    // Play/Pause Logic
+    // --- INITIALIZATION ---
+    document.addEventListener("DOMContentLoaded", () => {
+      renderRecentTracks();
+      fetchMetadata();
+      setInterval(fetchMetadata, 10000);
+    });
+
+    // Play/Pause Control
     playBtn.addEventListener("click", () => {
       if (isPlaying) {
         audio.pause();
@@ -424,12 +408,11 @@ const METADATA_URL = "https://api.allorigins.win/raw?url=192.168.1.128:8000/stat
       isPlaying = !isPlaying;
     });
 
-    // --- MENU OVERLAY CONTROLS ---
+    // --- MENU & MODALS ---
     const menuOverlay = document.getElementById("menuOverlay");
     document.getElementById("menuToggleBtn").addEventListener("click", () => menuOverlay.classList.add("active"));
     document.getElementById("menuCloseBtn").addEventListener("click", () => menuOverlay.classList.remove("active"));
 
-    // --- INLINE RECENT TOGGLE ---
     const toggleInlineRecent = document.getElementById("toggleInlineRecent");
     const inlineRecentContainer = document.getElementById("inlineRecentContainer");
 
@@ -437,7 +420,6 @@ const METADATA_URL = "https://api.allorigins.win/raw?url=192.168.1.128:8000/stat
       inlineRecentContainer.style.display = e.target.checked ? "block" : "none";
     });
 
-    // --- MODAL CONTROLS ---
     const infoModal = document.getElementById("infoModal");
     const historyModal = document.getElementById("historyModal");
 
@@ -457,171 +439,113 @@ const METADATA_URL = "https://api.allorigins.win/raw?url=192.168.1.128:8000/stat
     document.getElementById("closeInfoModal").addEventListener("click", () => infoModal.style.display = "none");
     document.getElementById("closeHistoryModal").addEventListener("click", () => historyModal.style.display = "none");
 
-    // --- METADATA & RECENT SONGS FETCHING ---
-    // Note: If Icecast CORS is blocked, you may need to fetch metadata via a simple backend proxy or serverless function.
-async function fetchMetadata() {
-  try {
-    const cacheBuster = (METADATA_URL.includes('?') ? '&' : '?') + `_=${Date.now()}`;
-    const response = await fetch(METADATA_URL + cacheBuster);
-    
-    if (!response.ok) {
-      console.error(`HTTP error! Status: ${response.status}`);
-      return;
-    }
+    // --- METADATA FETCHING ---
+    async function fetchMetadata() {
+      try {
+        const cacheBuster = (METADATA_URL.includes('?') ? '&' : '?') + `_=${Date.now()}`;
+        const response = await fetch(METADATA_URL + cacheBuster);
+        
+        if (!response.ok) return;
 
-    const data = await response.json();
-    console.log("Raw Icecast JSON Data:", data);
+        const data = await response.json();
+        let fullTitle = "";
 
-    let fullTitle = "";
+        if (data && data.icestats && data.icestats.source) {
+          let source = data.icestats.source;
+          if (Array.isArray(source)) source = source[0];
 
-    if (data && data.icestats && data.icestats.source) {
-      let source = data.icestats.source;
-      
-      // Handle array of sources/mountpoints
-      if (Array.isArray(source)) {
-        source = source[0];
-      }
+          if (source.metadata && source.metadata.x_icy_title) {
+            fullTitle = source.metadata.x_icy_title;
+          } else if (source.title) {
+            fullTitle = source.title;
+          } else if (source.yp_currently_playing) {
+            fullTitle = source.yp_currently_playing;
+          } else if (source.song) {
+            fullTitle = source.song;
+          }
+        }
 
-      // Check inside source.metadata.x_icy_title first
-      if (source.metadata && source.metadata.x_icy_title) {
-        fullTitle = source.metadata.x_icy_title;
-      } 
-      // Fallback checks for standard Icecast properties
-      else if (source.title) {
-        fullTitle = source.title;
-      } else if (source.yp_currently_playing) {
-        fullTitle = source.yp_currently_playing;
-      } else if (source.song) {
-        fullTitle = source.song;
+        if (fullTitle.trim() !== "") {
+          updateNowPlaying(fullTitle);
+        }
+      } catch (err) {
+        console.warn("Could not fetch metadata:", err);
       }
     }
 
-    console.log("Extracted Title:", fullTitle);
+    function updateNowPlaying(fullTitle) {
+      let artist = "Unknown Artist";
+      let song = fullTitle;
 
-    if (fullTitle.trim() !== "") {
-      updateNowPlaying(fullTitle);
-    } else {
-      console.warn("Could not find x_icy_title or title property in icestats.source");
-    }
-  } catch (err) {
-    console.error("Error fetching or parsing metadata:", err);
-  }
-}
+      if (fullTitle.includes(" - ")) {
+        const parts = fullTitle.split(" - ");
+        artist = parts[0].trim();
+        song = parts.slice(1).join(" - ").trim();
+      } else if (fullTitle.includes("-")) {
+        const parts = fullTitle.split("-");
+        artist = parts[0].trim();
+        song = parts.slice(1).join("-").trim();
+      }
 
-function updateNowPlaying(fullTitle) {
-  let artist = "Unknown Artist";
-  let song = fullTitle;
+      const currentSongElement = document.getElementById("songTitle");
 
-  // Split "Artist - Song Title" if it contains a hyphen
-  if (fullTitle.includes(" - ")) {
-    const parts = fullTitle.split(" - ");
-    artist = parts[0].trim();
-    song = parts.slice(1).join(" - ").trim();
-  } else if (fullTitle.includes("-")) {
-    const parts = fullTitle.split("-");
-    artist = parts[0].trim();
-    song = parts.slice(1).join("-").trim();
-  }
+      if (currentSongElement.innerText !== song) {
+        if (currentSongElement.innerText !== "Loading Station...") {
+          recentTracks.unshift({ 
+            artist: document.getElementById("artistName").innerText, 
+            song: currentSongElement.innerText 
+          });
+          
+          if (recentTracks.length > 10) recentTracks.pop();
 
-  const currentSongElement = document.getElementById("songTitle");
+          // Save to LocalStorage so history persists
+          localStorage.setItem("radio_recent_tracks", JSON.stringify(recentTracks));
+          renderRecentTracks();
+        }
 
-  // Update UI if track has changed
-  if (currentSongElement.innerText !== song) {
-    if (currentSongElement.innerText !== "Loading Station...") {
-      recentTracks.unshift({ 
-        artist: document.getElementById("artistName").innerText, 
-        song: currentSongElement.innerText 
-      });
-      if (recentTracks.length > 10) recentTracks.pop();
-      renderRecentTracks();
+        document.getElementById("songTitle").innerText = song;
+        document.getElementById("artistName").innerText = artist;
+
+        fetchArtwork(`${artist} ${song}`);
+      }
     }
 
-    document.getElementById("songTitle").innerText = song;
-    document.getElementById("artistName").innerText = artist;
+    async function fetchArtwork(query) {
+      const itunesBtn = document.getElementById("itunesBtn");
+      try {
+        const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=1`);
+        const data = await res.json();
+        
+        if (data.results && data.results.length > 0) {
+          const track = data.results[0];
+          const highResArt = track.artworkUrl100.replace("100x100bb", "600x600bb");
+          document.getElementById("albumArt").src = highResArt;
 
-    // Fetch Artwork from iTunes API
-    fetchArtwork(`${artist} ${song}`);
-  }
-}
-// Fetch Artwork & Apple Music Link using iTunes API
-async function fetchArtwork(query) {
-  const itunesBtn = document.getElementById("itunesBtn");
-
-  try {
-    const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=1`);
-    const data = await res.json();
-    
-    if (data.results && data.results.length > 0) {
-      const track = data.results[0];
-
-      // Update High-Res Artwork
-      const highResArt = track.artworkUrl100.replace("100x100bb", "600x600bb");
-      document.getElementById("albumArt").src = highResArt;
-
-      // Update iTunes / Apple Music Link
-      const trackUrl = track.trackViewUrl || track.collectionViewUrl;
-      if (trackUrl) {
-        itunesBtn.href = trackUrl;
-        itunesBtn.style.display = "flex";
-      } else {
+          const trackUrl = track.trackViewUrl || track.collectionViewUrl;
+          if (trackUrl) {
+            itunesBtn.href = trackUrl;
+            itunesBtn.style.display = "flex";
+          } else {
+            itunesBtn.style.display = "none";
+          }
+        } else {
+          itunesBtn.style.display = "none";
+        }
+      } catch (e) {
         itunesBtn.style.display = "none";
       }
-    } else {
-      // Hide button if no match found on iTunes
-      itunesBtn.style.display = "none";
-    }
-  } catch (e) {
-    console.warn("Could not fetch artwork/link from iTunes API:", e);
-    itunesBtn.style.display = "none";
-  }
-}
-    // Load saved history from browser memory on startup, or start empty
-let recentTracks = JSON.parse(localStorage.getItem("radio_recent_tracks")) || [];
-
-// Call render on initial load so previously saved tracks show up immediately
-document.addEventListener("DOMContentLoaded", () => {
-  renderRecentTracks();
-});
-
-function updateNowPlaying(fullTitle) {
-  let artist = "Unknown Artist";
-  let song = fullTitle;
-
-  if (fullTitle.includes(" - ")) {
-    const parts = fullTitle.split(" - ");
-    artist = parts[0].trim();
-    song = parts.slice(1).join(" - ").trim();
-  } else if (fullTitle.includes("-")) {
-    const parts = fullTitle.split("-");
-    artist = parts[0].trim();
-    song = parts.slice(1).join("-").trim();
-  }
-
-  const currentSongElement = document.getElementById("songTitle");
-
-  // Update UI if track has changed
-  if (currentSongElement.innerText !== song) {
-    if (currentSongElement.innerText !== "Loading Station...") {
-      // Add current track to history array
-      recentTracks.unshift({ 
-        artist: document.getElementById("artistName").innerText, 
-        song: currentSongElement.innerText 
-      });
-      
-      // Limit history to 10 items
-      if (recentTracks.length > 10) recentTracks.pop();
-
-      // Save to localStorage so it survives page reloads
-      localStorage.setItem("radio_recent_tracks", JSON.stringify(recentTracks));
-
-      renderRecentTracks();
     }
 
-    document.getElementById("songTitle").innerText = song;
-    document.getElementById("artistName").innerText = artist;
+    function renderRecentTracks() {
+      const inlineList = document.getElementById("inlineRecentList");
+      const fullList = document.getElementById("fullHistoryList");
 
-    fetchArtwork(`\({artist}\){song}`);
-      });
+      inlineList.innerHTML = "";
+      fullList.innerHTML = "";
+
+      const inlineTracks = recentTracks.slice(0, 5);
+      inlineTracks.forEach(track => inlineList.appendChild(createTrackItemHTML(track)));
+      recentTracks.forEach(track => fullList.appendChild(createTrackItemHTML(track)));
     }
 
     function createTrackItemHTML(track) {
@@ -636,10 +560,6 @@ function updateNowPlaying(fullTitle) {
       `;
       return div;
     }
-
-    // Poll metadata every 10 seconds
-    setInterval(fetchMetadata, 10000);
-    fetchMetadata();
   </script>
 </body>
 </html>
